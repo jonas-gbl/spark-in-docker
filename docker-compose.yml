@@ -1,6 +1,6 @@
 master:
-  image: gettyimages/spark
-  command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+  image: riyadparvez/spark
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master -h master
   hostname: master
   environment:
     MASTER: spark://master:7077
@@ -24,10 +24,11 @@ master:
     - ./data:/tmp/data
 
 worker:
-  image: gettyimages/spark
-  command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+  image: riyadparvez/spark
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker
   environment:
+    MASTER: spark://master:7077
     SPARK_CONF_DIR: /conf
     SPARK_WORKER_CORES: 2
     SPARK_WORKER_MEMORY: 1g

@@ -1,42 +1,10 @@
-FROM debian:jessie
-MAINTAINER Getty Images "https://github.com/gettyimages"
+FROM anapsix/alpine-java
+MAINTAINER Riyad Parvez "riyad.parvez@gmail.com"
 
-RUN apt-get update \
- && apt-get install -y locales \
- && dpkg-reconfigure -f noninteractive locales \
- && locale-gen C.UTF-8 \
- && /usr/sbin/update-locale LANG=C.UTF-8 \
- && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
- && locale-gen \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+RUN apk add --update curl git unzip python3 py-pip && pip install -U py4j
 
-# Users with other locales should set this in their derivative image
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-
-RUN apt-get update \
- && apt-get install -y curl unzip \
-    python3 python3-setuptools \
- && easy_install3 pip py4j \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-# http://blog.stuart.axelbrooke.com/python-3-on-spark-return-of-the-pythonhashseed
 ENV PYTHONHASHSEED 0
 ENV PYTHONIOENCODING UTF-8
-
-# JAVA
-ENV JAVA_HOME /usr/jdk1.8.0_31
-ENV PATH $PATH:$JAVA_HOME/bin
-RUN curl -sL --retry 3 --insecure \
-  --header "Cookie: oraclelicense=accept-securebackup-cookie;" \
-  "http://download.oracle.com/otn-pub/java/jdk/8u31-b13/server-jre-8u31-linux-x64.tar.gz" \
-  | gunzip \
-  | tar x -C /usr/ \
-  && ln -s $JAVA_HOME /usr/java \
-  && rm -rf $JAVA_HOME/man
 
 # HADOOP
 ENV HADOOP_VERSION 2.6.3

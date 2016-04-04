@@ -1,3 +1,6 @@
+# Alpine Linux
+
+Many Docker Apache Spark images are based on heavy-weight Debian images. This is based on Alpine Linux which is optimized for containers and light-weight.
 
 # spark
 
