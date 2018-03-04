@@ -1,32 +1,56 @@
 FROM anapsix/alpine-java
-MAINTAINER Riyad Parvez "riyad.parvez@gmail.com"
+MAINTAINER Jonas Gabriel "jonas.gbl@gmail.com"
 
-RUN apk add --update curl git unzip python3 py-pip && pip install -U py4j
+RUN apk add --update curl git unzip python3 py-pip 
+RUN pip install -U py4j
 
-ENV PYTHONHASHSEED=0 \
-    PYTHONIOENCODING=UTF-8 \
-    HADOOP_VERSION=2.6.3 \
-    HADOOP_HOME=/usr/hadoop-$HADOOP_VERSION \
-    HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop \
-    PATH=$PATH:$HADOOP_HOME/bin \
-    SPARK_VERSION=1.6.1 \
-    SPARK_PACKAGE=spark-$SPARK_VERSION-bin-without-hadoop \
-    SPARK_HOME=/usr/spark-$SPARK_VERSION \
-    PYSPARK_PYTHON=python3
+ENV SPARK_VERSION=2.3.0
+ENV HADOOP_VERSION=2.7.5
+
 RUN curl -sL --retry 3 \
-  "http://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" \
-  | gunzip \
-  | tar -x -C /usr/ \
- && rm -rf $HADOOP_HOME/share/doc
+ "http://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" \
+ | tar -xz -C /opt \
+ && rm -rf /opt/hadoop-$HADOOP_VERSION/share/doc
 
-ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop/*:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:$HADOOP_HOME/share/hadoop/tools/lib/*" \
-    PATH=$PATH:$SPARK_HOME/bin
 RUN curl -sL --retry 3 \
-  "http://d3kbcqa49mib13.cloudfront.net/$SPARK_PACKAGE.tgz" \
-  | gunzip \
-  | tar x -C /usr/ \
-  && mv /usr/$SPARK_PACKAGE $SPARK_HOME \
-  && rm -rf $SPARK_HOME/examples $SPARK_HOME/ec2
+  "http://mirrors.dotsrc.org/apache/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop2.7.tgz" \
+  | tar -xz -C /opt \
+  && rm -rf /opt/spark-$SPARK_VERSION-bin-without-hadoop/examples \
+  && mv /opt/spark-$SPARK_VERSION-bin-hadoop2.7 /opt/spark-$SPARK_VERSION
+
+ADD conf/spark-defaults.conf /opt/spark-$SPARK_VERSION/conf/
+ADD conf/spark-env.sh /opt/spark-$SPARK_VERSION/conf/
+ADD sbin/spark-daemon.sh     /opt/spark-$SPARK_VERSION/sbin/
+
+ENV HADOOP_HOME=/opt/hadoop-$HADOOP_VERSION
+ENV HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+
+ENV SPARK_HOME=/opt/spark-$SPARK_VERSION
+
+ENV PYTHONHASHSEED=0
+ENV PYTHONIOENCODING=UTF-8
+ENV PYSPARK_PYTHON=python3
+
+ENV PATH=$PATH:$HADOOP_HOME/bin
+ENV	PATH=$PATH:$SPARK_HOME/bin
+ENV	PATH=$PATH:$SPARK_HOME/sbin
+
+ENV SPARK_MASTER_WEBUI_PORT=8080
+ENV SPARK_WORKER_WEBUI_PORT=8081
+ENV SPARK_MASTER_PORT=7077
+ENV SPARK_WORKER_PORT=7078
+
+#This is needed so the spark-daemon works in the foreground
+ENV SPARK_NO_DAEMONIZE=1
+
+EXPOSE $SPARK_MASTER_WEBUI_PORT $SPARK_WORKER_WEBUI_PORT $SPARK_MASTER_PORT $SPARK_WORKER_PORT
+
+# Ports for spark.driver.port, spark.blockManager.port defined in spark-defaults.conf
+EXPOSE 7070 7071 7080
+
+# Used for publishing the Driver applicationn on the cluster
+VOLUME /srv
 
 WORKDIR $SPARK_HOME
-CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+CMD ["start-master.sh"]
