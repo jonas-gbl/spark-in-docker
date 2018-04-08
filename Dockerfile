@@ -19,8 +19,9 @@ RUN curl -sL --retry 3 \
   && mv /opt/spark-$SPARK_VERSION-bin-hadoop2.7 /opt/spark-$SPARK_VERSION
 
 ADD conf/spark-defaults.conf /opt/spark-$SPARK_VERSION/conf/
-ADD conf/spark-env.sh /opt/spark-$SPARK_VERSION/conf/
+ADD conf/spark-env.sh        /opt/spark-$SPARK_VERSION/conf/
 ADD sbin/spark-daemon.sh     /opt/spark-$SPARK_VERSION/sbin/
+ADD utils/wait-for-it.sh 	 /usr/bin/wait-for-it
 
 ENV HADOOP_HOME=/opt/hadoop-$HADOOP_VERSION
 ENV HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop

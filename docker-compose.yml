@@ -1,45 +1,38 @@
-spark-master:
-  image: joga/spark:0.1.2
-  command: start-master.sh
-  hostname: spark-master
-  ports:
-    - 4040:4040
-    - 6066:6066
-    - 7077:7077
-    - 8080:8080
-  volumes:
-    - /home/jga/docker-volumes/spark:/srv
-  links:
-    - spark-worker-1
-    - spark-worker-2
-    - spark-worker-3
+version: "3.5"
+services:
+  spark-master:
+    image: joga/spark:0.1.6
+    hostname: spark-master  
+    command: start-master.sh
+    ports:
+      - 4040:4040
+      - 6066:6066
+      - 7077:7077
+      - 8080:8080
+    volumes:
+      - /home/jga/docker-volumes/spark:/srv
+    networks:
+      - spark-net
 
-spark-worker-1:
-  image: joga/spark:0.1.2
-  command: start-slave.sh spark://spark-master:7077
-  hostname: spark-worker-1
-  environment:
-    SPARK_WORKER_CORES: 1
-    SPARK_WORKER_MEMORY: 1g
-  volumes:
-    - /home/jga/docker-volumes/spark:/srv
+  spark-worker:
+    image: joga/spark:0.1.6
+    command: start-slave.sh spark://spark-master:7077
+    environment:
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 1g
+    volumes:
+      - /home/jga/docker-volumes/spark:/srv
+    networks:
+      - spark-net
 
-spark-worker-2:
-  image: joga/spark:0.1.2
-  command: start-slave.sh spark://spark-master:7077
-  hostname: spark-worker-2
-  environment:
-    SPARK_WORKER_CORES: 1
-    SPARK_WORKER_MEMORY: 1g
-  volumes:
-    - /home/jga/docker-volumes/spark:/srv
+  spark-submit:
+    image: joga/spark:0.1.6
+    command: wait-for-it -h spark-master -p 6066 -s -- spark-submit --class org.apache.spark.examples.JavaSparkPi /srv/spark-examples_2.11-2.2.1.jar 
+    volumes:
+      - /home/jga/docker-volumes/spark:/srv
+    networks:
+      - spark-net
 
-spark-worker-3:
-  image: joga/spark:0.1.2
-  command: start-slave.sh spark://spark-master:7077
-  hostname: spark-worker-3
-  environment:
-    SPARK_WORKER_CORES: 1
-    SPARK_WORKER_MEMORY: 1g
-  volumes:
-    - /home/jga/docker-volumes/spark:/srv
+networks:
+  spark-net:
+   name: spark-net
