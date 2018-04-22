@@ -11,9 +11,10 @@ services:
     volumes:
       - /home/jga/docker-volumes/spark:/srv
 
-  spark-submit:
-    image: joga/spark:0.1.6
-    command: wait-for-it -h spark-master -p 6066 -s -- spark-submit --class org.apache.spark.examples.JavaSparkPi /srv/spark-examples_2.11-2.2.1.jar 
+  spark-driver:
+    build:
+      context: .
+    command: wait-for-it -h spark-master -p 7077 -s -- spark-submit --class org.apache.spark.examples.JavaSparkPi /srv/spark-examples_2.11-2.2.1.jar 
     volumes:
       - /home/jga/docker-volumes/spark:/srv
     networks:
